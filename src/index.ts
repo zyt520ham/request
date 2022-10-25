@@ -1,30 +1,15 @@
 import axios from 'axios';
 import type { AxiosRequestConfig, AxiosInstance } from 'axios';
-import { CONTENT_TYPE, transformRequestData } from './shared';
+import {
+  CONTENT_TYPE,
+  transformRequestData,
+  isHttpSuccess,
+  handleAxiosError,
+  handleHttpError,
+  handleBackendError
+} from './shared';
 import type { ContentTypeValue } from './shared';
-
-/** 自定义的请求配置 */
-export interface RequestConfig {
-  /** 表示后端请求状态码的属性字段 */
-  codeKey: string;
-  /** 表示后端请求数据的属性字段 */
-  dataKey: string;
-  /** 表示后端消息的属性字段 */
-  msgKey: string;
-  /** 后端业务上定义的成功请求的状态 */
-  successCode: number | string;
-  /**
-   * 设置请求头的钩子函数(在请求拦截器执行)
-   * @param headers 请求头
-   */
-  onEditHeaders: (headers: NonNullable<AxiosRequestConfig['headers']>) => void;
-  /**
-   * 弹窗展示错误信息的钩子函数
-   * @param msg 弹窗信息
-   * @param duration 弹窗信息的延迟时间
-   */
-  onShowMsg: (msg: string, duration: number) => void;
-}
+import type { RequestConfig } from './types';
 
 class Request {
   axiosInstance: AxiosInstance;
@@ -40,21 +25,41 @@ class Request {
 
   /** 设置请求拦截器 */
   setInterceptor() {
-    this.axiosInstance.interceptors.request.use(async config => {
-      const handleConfig = { ...config };
+    this.axiosInstance.interceptors.request.use(
+      async config => {
+        const handleConfig = { ...config };
 
-      if (handleConfig.headers) {
-        // 数据转换
-        const contentType = (handleConfig.headers['Content-Type'] || CONTENT_TYPE.json) as ContentTypeValue;
-        handleConfig.data = await transformRequestData(config.data, contentType);
+        if (handleConfig.headers) {
+          // 数据转换
+          const contentType = (handleConfig.headers['Content-Type'] || CONTENT_TYPE.json) as ContentTypeValue;
+          handleConfig.data = await transformRequestData(config.data, contentType);
 
-        // 设置请求头(配置token等操作)
-        this.requestConfig.onEditHeaders(handleConfig.headers);
-      }
+          // 设置请求头(配置token等操作)
+          this.requestConfig.onEditHeaders(handleConfig.headers);
+        }
 
-      return handleConfig;
-    });
-    this.axiosInstance.interceptors.response.use(config => config);
+        return handleConfig;
+      },
+      error => handleAxiosError(error)
+    );
+    this.axiosInstance.interceptors.response.use(
+      response => {
+        if (isHttpSuccess(response.status)) {
+          const backend = response.data as Record<string, any>;
+          const { codeKey, successCode, msgKey } = this.requestConfig;
+          // 后端定义的业务上的请求成功
+          if (backend[codeKey] === successCode) {
+            return Promise.resolve(response);
+          }
+
+          // 后端定义的业务上的错误
+          return Promise.reject(handleBackendError(response, { codeKey, msgKey }));
+        }
+
+        return Promise.reject(handleHttpError(response));
+      },
+      error => handleAxiosError(error)
+    );
   }
 }
 
@@ -71,5 +76,5 @@ export function createRequest(axiosConfig: AxiosRequestConfig, requestConfig?: P
 
   const request = new Request(axiosConfig, configs);
 
-  return request;
+  return request.axiosInstance;
 }

@@ -50,6 +50,8 @@ export const ERROR_STATUS = {
   [DEFAULT_REQUEST_ERROR_CODE]: DEFAULT_REQUEST_ERROR_MSG
 };
 
+export type ErrorStatus = keyof typeof ERROR_STATUS;
+
 /** 不弹出错误信息的code */
 export const NO_ERROR_MSG_CODE: (string | number)[] = [];
 
