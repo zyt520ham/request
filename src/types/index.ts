@@ -1,4 +1,4 @@
-import type { AxiosError, AxiosRequestConfig } from 'axios';
+import type { AxiosError, AxiosRequestConfig, AxiosResponse, AxiosInstance } from 'axios';
 
 /**
  * 请求的错误类型：
@@ -59,14 +59,20 @@ export interface RequestConfig {
   /** 后端业务上定义的成功请求的状态 */
   successCode: number | string;
   /**
-   * 设置请求头的钩子函数(在请求拦截器执行)
-   * @param headers 请求头
+   * 请求前的钩子函数
+   * @param config 请求配置
+   * @example 可以对请求头进行操作，如设置Token
    */
-  onEditHeaders: (headers: NonNullable<AxiosRequestConfig['headers']>) => void;
+  onRequest(config: AxiosRequestConfig): AxiosRequestConfig;
   /**
-   * 弹窗展示错误信息的钩子函数
-   * @param msg 弹窗信息
-   * @param duration 弹窗信息的延迟时间
+   * http请求成功情况下，后端业务上表示请求成功的处理
+   * @param responseData 请求后的数据 (response.data)
    */
-  onShowMsg: (msg: string, duration: number) => void;
+  onBackendSuccess(responseData: any): boolean;
+  /**
+   * http请求成功情况下, 后端业务上表示请求失败的处理
+   * @param response axios的相响应
+   * @param axiosInstance axios实例
+   */
+  onBackendFail?(response: AxiosResponse, axiosInstance: AxiosInstance): Promise<AxiosResponse | void>;
 }

@@ -27,29 +27,34 @@ class Request {
   setInterceptor() {
     this.axiosInstance.interceptors.request.use(
       async config => {
-        const handleConfig = { ...config };
+        const conf = { ...config };
 
-        if (handleConfig.headers) {
+        if (conf.headers) {
           // 数据转换
-          const contentType = (handleConfig.headers['Content-Type'] || CONTENT_TYPE.json) as ContentTypeValue;
-          handleConfig.data = await transformRequestData(config.data, contentType);
-
-          // 设置请求头(配置token等操作)
-          this.requestConfig.onEditHeaders(handleConfig.headers);
+          const contentType = (conf.headers['Content-Type'] || CONTENT_TYPE.json) as ContentTypeValue;
+          conf.data = await transformRequestData(config.data, contentType);
         }
 
-        return handleConfig;
+        Object.assign(conf, this.requestConfig.onRequest(conf));
+
+        return conf;
       },
       error => handleAxiosError(error)
     );
     this.axiosInstance.interceptors.response.use(
-      response => {
+      async response => {
         if (isHttpSuccess(response.status)) {
-          const backend = response.data as Record<string, any>;
-          const { codeKey, successCode, msgKey } = this.requestConfig;
-          // 后端定义的业务上的请求成功
-          if (backend[codeKey] === successCode) {
+          const { codeKey, msgKey } = this.requestConfig;
+
+          if (this.requestConfig.onBackendSuccess(response.data)) {
             return Promise.resolve(response);
+          }
+
+          if (this.requestConfig.onBackendFail) {
+            const fail = await this.requestConfig.onBackendFail(response, this.axiosInstance);
+            if (fail) {
+              return fail;
+            }
           }
 
           // 后端定义的业务上的错误
@@ -69,8 +74,11 @@ export function createRequest(axiosConfig: AxiosRequestConfig, requestConfig?: P
     dataKey: 'data',
     msgKey: 'message',
     successCode: 200,
-    onEditHeaders() {},
-    onShowMsg() {}
+    onRequest: config => config,
+    onBackendSuccess: responseData => {
+      const { codeKey, successCode } = configs;
+      return responseData[codeKey] === successCode;
+    }
   };
   Object.assign(configs, requestConfig);
 
