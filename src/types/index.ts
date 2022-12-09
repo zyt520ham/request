@@ -56,23 +56,44 @@ export interface RequestConfig {
   dataKey: string;
   /** 表示后端消息的属性字段 */
   msgKey: string;
-  /** 后端业务上定义的成功请求的状态 */
-  successCode: number | string;
   /**
    * 请求前的钩子函数
    * @param config 请求配置
    * @example 可以对请求头进行操作，如设置Token
    */
-  onRequest(config: AxiosRequestConfig): AxiosRequestConfig;
+  onRequest?: (config: AxiosRequestConfig) => Promise<AxiosRequestConfig>;
   /**
    * http请求成功情况下，后端业务上表示请求成功的处理
    * @param responseData 请求后的数据 (response.data)
    */
-  onBackendSuccess(responseData: any): boolean;
+  onBackendSuccess?: (responseData: any) => boolean;
   /**
    * http请求成功情况下, 后端业务上表示请求失败的处理
    * @param response axios的相响应
    * @param axiosInstance axios实例
    */
-  onBackendFail?(response: AxiosResponse, axiosInstance: AxiosInstance): Promise<AxiosResponse | void>;
+  onBackendFail?: (response: AxiosResponse, axiosInstance: AxiosInstance) => Promise<AxiosResponse | void>;
+  /** 请求失败情况下，对错误进行处理，例如：进行错误信息展示 */
+  onError?: <T, D>(error: RequestError<T, D>) => Promise<void>;
 }
+
+export type RequiredRequestConfig = Required<RequestConfig>;
+
+/** 自定义的请求成功结果 */
+export interface SuccessResponse<T> {
+  /** 请求错误 */
+  error: null;
+  /** 请求数据 */
+  data: T;
+}
+
+/** 自定义的请求失败结果 */
+export interface FailedResponse<T> {
+  /** 请求错误 */
+  error: RequestError<T, any>;
+  /** 请求数据 */
+  data: null;
+}
+
+/** 自定义的请求结果 */
+export type CustomResponse<T> = SuccessResponse<T> | FailedResponse<T>;

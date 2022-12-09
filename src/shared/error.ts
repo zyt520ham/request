@@ -1,4 +1,4 @@
-import type { AxiosError, AxiosResponse } from 'axios';
+import type { AxiosResponse } from 'axios';
 import {
   DEFAULT_REQUEST_ERROR_CODE,
   DEFAULT_REQUEST_ERROR_MSG,
@@ -6,56 +6,11 @@ import {
   NETWORK_ERROR_MSG,
   REQUEST_TIMEOUT_CODE,
   REQUEST_TIMEOUT_MSG,
+  BLANK_AXIOS_ERROR_CODE,
   ERROR_STATUS
 } from './constant';
 import type { ErrorStatus } from './constant';
-import type { RequestConfig } from '../types';
-
-/**
- * 请求的错误类型：
- * - axios: axios错误：网络错误, 请求超时, 默认的兜底错误
- * - http: 请求成功，响应的http状态码非200的错误
- * - backend: 请求成功，响应的http状态码为200，由后端定义的业务错误
- */
-export type RequestErrorType = 'axios' | 'http' | 'backend';
-
-type AxiosErrorCode =
-  | 'ERR_FR_TOO_MANY_REDIRECTS'
-  | 'ERR_BAD_OPTION_VALUE'
-  | 'ERR_BAD_OPTION'
-  | 'ERR_NETWORK'
-  | 'ERR_DEPRECATED'
-  | 'ERR_BAD_RESPONSE'
-  | 'ERR_BAD_REQUEST'
-  | 'ERR_NOT_SUPPORT'
-  | 'ERR_INVALID_URL'
-  | 'ERR_CANCELED'
-  | 'ECONNABORTED'
-  | 'ETIMEDOUT';
-
-const BLANK_AXIOS_ERROR_CODE = '';
-
-type RawError<T, D> = Pick<AxiosError<T, D>, 'message' | 'config' | 'response'> & {
-  code: AxiosErrorCode | typeof BLANK_AXIOS_ERROR_CODE;
-  request: XMLHttpRequest;
-};
-
-interface CustomError {
-  /** 请求服务的错误类型 */
-  type: RequestErrorType;
-  /** 错误码 */
-  code: string | number;
-  /** 错误信息 */
-  msg: string;
-}
-
-/** 请求错误 */
-interface RequestError<T, D> {
-  /** 自定义的错误 */
-  error: CustomError;
-  /** 原始请求错误 */
-  rawError: RawError<T, D>;
-}
+import type { CustomError, RawError, RequestError, RequestConfig } from '../types';
 
 function updateCustomError(error: CustomError, update: Partial<CustomError>) {
   Object.assign(error, update);

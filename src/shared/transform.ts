@@ -1,5 +1,6 @@
 import qs from 'qs';
 import FormData from 'form-data';
+import { isArray, isFile } from './typeof';
 import { CONTENT_TYPE } from './constant';
 import type { ContentTypeValue } from './constant';
 
@@ -59,12 +60,6 @@ async function transformFile(formData: FormData, key: string, file: File[] | Fil
   }
 }
 
-function isArray<T extends any[]>(value: T | unknown): value is T {
-  return Object.prototype.toString.call(value) === '[object Array]';
-}
-function isFile<T extends File>(value: T | unknown): value is T {
-  return Object.prototype.toString.call(value) === '[object File]';
-}
 function isFileArray<T extends File[]>(value: T | unknown): value is T {
   return isArray(value) && value.length > 0 && isFile(value[0]);
 }

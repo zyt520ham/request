@@ -33,6 +33,8 @@ export const NETWORK_ERROR_CODE = 'NETWORK_ERROR';
 /** 网络不可用的错误文本 */
 export const NETWORK_ERROR_MSG = '网络不可用~';
 
+export const BLANK_AXIOS_ERROR_CODE = '';
+
 /** 请求不成功各种状态的错误 */
 export const ERROR_STATUS = {
   400: '400: 请求出现语法错误~',

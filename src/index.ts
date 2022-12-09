@@ -1,41 +1,41 @@
 import axios from 'axios';
 import type { AxiosRequestConfig, AxiosInstance } from 'axios';
 import {
-  CONTENT_TYPE,
+  createDefaultRequestConfig,
+  getRequestHeaderContentType,
   transformRequestData,
   isHttpSuccess,
   handleAxiosError,
   handleHttpError,
   handleBackendError
 } from './shared';
-import type { ContentTypeValue } from './shared';
-import type { RequestConfig } from './types';
+import type { RequestConfig, RequiredRequestConfig } from './types';
 
 class Request {
   axiosInstance: AxiosInstance;
 
-  requestConfig: RequestConfig;
+  requestConfig: RequiredRequestConfig;
 
-  constructor(axiosConfig: AxiosRequestConfig, requestConfig: RequestConfig) {
+  constructor(axiosConfig: AxiosRequestConfig, requestConfig?: RequestConfig) {
     this.axiosInstance = axios.create(axiosConfig);
     this.setInterceptor();
 
-    this.requestConfig = requestConfig;
+    this.requestConfig = createDefaultRequestConfig(requestConfig);
   }
 
   /** 设置请求拦截器 */
   setInterceptor() {
     this.axiosInstance.interceptors.request.use(
       async config => {
-        const conf = { ...config };
+        const conf: AxiosRequestConfig = { ...config };
 
-        if (conf.headers) {
-          // 数据转换
-          const contentType = (conf.headers['Content-Type'] || CONTENT_TYPE.json) as ContentTypeValue;
-          conf.data = await transformRequestData(config.data, contentType);
-        }
+        const contentType = getRequestHeaderContentType(conf);
 
-        Object.assign(conf, this.requestConfig.onRequest(conf));
+        conf.data = await transformRequestData(config.data, contentType);
+
+        const handledConf = await this.requestConfig.onRequest(conf);
+
+        Object.assign(conf, handledConf);
 
         return conf;
       },
@@ -68,21 +68,15 @@ class Request {
   }
 }
 
-export function createRequest(axiosConfig: AxiosRequestConfig, requestConfig?: Partial<RequestConfig>) {
-  const configs: RequestConfig = {
-    codeKey: 'code',
-    dataKey: 'data',
-    msgKey: 'message',
-    successCode: 200,
-    onRequest: config => config,
-    onBackendSuccess: responseData => {
-      const { codeKey, successCode } = configs;
-      return responseData[codeKey] === successCode;
-    }
-  };
-  Object.assign(configs, requestConfig);
-
-  const request = new Request(axiosConfig, configs);
+/**
+ * 创建请求
+ * @param axiosConfig axios配置
+ * @param requestConfig 请求配置
+ * @param isRaw 是否返回原始的axios实例, (默认返回自定义的请求实例)
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function createRequest(axiosConfig: AxiosRequestConfig, requestConfig?: RequestConfig, isRaw = false) {
+  const request = new Request(axiosConfig, requestConfig);
 
   return request.axiosInstance;
 }
