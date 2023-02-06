@@ -1,4 +1,4 @@
-import type { AxiosRequestConfig, AxiosInstance } from 'axios';
+import type { AxiosRequestConfig, RawAxiosRequestHeaders } from 'axios';
 import { CONTENT_TYPE, type ContentTypeValue } from './constant';
 import type { RequestConfig, RequiredRequestConfig } from '../types';
 
@@ -14,9 +14,7 @@ export function createDefaultRequestConfig(requestConfig?: RequestConfig) {
       return responseData[codeKey] === BACKEND_SUCCESS_CODE;
     },
     onBackendFail: async () => {},
-    onError: async ({ error }) => {
-      window.console.log(`code: ${error.code}, msg: ${error.msg}`);
-    }
+    onError: async () => {}
   };
 
   Object.assign(configs, requestConfig);
@@ -25,7 +23,9 @@ export function createDefaultRequestConfig(requestConfig?: RequestConfig) {
 }
 
 export function getRequestHeaderContentType(config: AxiosRequestConfig) {
-  const contentType = (config?.headers?.['Content-Type'] || CONTENT_TYPE.json) as ContentTypeValue;
+  const headerContentType = (config?.headers as RawAxiosRequestHeaders)?.['Content-Type'];
+
+  const contentType = (headerContentType || CONTENT_TYPE.json) as ContentTypeValue;
 
   return contentType;
 }
@@ -38,6 +38,3 @@ export function isHttpSuccess(status: number) {
   const isSuccessCode = status >= 200 && status < 300;
   return isSuccessCode || status === 304;
 }
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function getCustomRequestInstance(instance: AxiosInstance) {}

@@ -9,6 +9,7 @@ import {
   BLANK_AXIOS_ERROR_CODE,
   ERROR_STATUS
 } from './constant';
+import { getNetworkIsOnline } from './network';
 import type { ErrorStatus } from './constant';
 import type { CustomError, RawError, RequestError, RequestConfig } from '../types';
 
@@ -30,7 +31,7 @@ export function handleAxiosError<T, D>(rawError: RawError<T, D>): RequestError<T
   const actions: [boolean, () => void][] = [
     [
       // 网路错误
-      !window.navigator.onLine || rawError.message === 'Network Error',
+      !getNetworkIsOnline() || rawError.message === 'Network Error',
       () => {
         updateCustomError(error, { code: NETWORK_ERROR_CODE, msg: NETWORK_ERROR_MSG });
       }
@@ -78,7 +79,7 @@ export function handleHttpError<T, D>(response: AxiosResponse<T, D>): RequestErr
     msg: DEFAULT_REQUEST_ERROR_MSG
   };
 
-  if (!window.navigator.onLine) {
+  if (!getNetworkIsOnline()) {
     // 网路错误
     updateCustomError(error, { code: NETWORK_ERROR_CODE, msg: NETWORK_ERROR_MSG });
   } else {

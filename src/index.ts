@@ -16,7 +16,7 @@ class Request {
 
   requestConfig: RequiredRequestConfig;
 
-  constructor(axiosConfig: AxiosRequestConfig, requestConfig?: RequestConfig) {
+  constructor(axiosConfig?: AxiosRequestConfig, requestConfig?: RequestConfig) {
     this.axiosInstance = axios.create(axiosConfig);
     this.setInterceptor();
 
@@ -72,10 +72,8 @@ class Request {
  * 创建请求
  * @param axiosConfig axios配置
  * @param requestConfig 请求配置
- * @param isRaw 是否返回原始的axios实例, (默认返回自定义的请求实例)
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function createRequest(axiosConfig: AxiosRequestConfig, requestConfig?: RequestConfig, isRaw = false) {
+export function createRequest(axiosConfig?: AxiosRequestConfig, requestConfig?: RequestConfig) {
   const request = new Request(axiosConfig, requestConfig);
 
   return request.axiosInstance;
